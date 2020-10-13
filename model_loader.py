@@ -70,9 +70,23 @@ def make_model(settings: Dict[str, Any]) -> torch.nn.Module:
 
 
 def get_model_settings_from_checkpoint(ckpt: Dict[str, Any]) -> Dict[str, Any]:
+
+    if "model_type" not in ckpt:
+        ckpt["model_type"] = "tsn"
+
+    if "segment_count" not in ckpt:
+        ckpt["segment_count"] = 8
+
+    if "modality" not in ckpt:
+        ckpt["modality"] = "RGB"
+
+    if "consensus_type" not in ckpt:
+        ckpt["consensus_type"] = "avg"
+
     settings = {
         key: ckpt[key] for key in ["model_type", "segment_count", "modality", "arch"]
     }
+
     if ckpt["model_type"] == "tsn":
         settings["consensus_type"] = ckpt["consensus_type"]
     if ckpt["model_type"] in ["tsm", "tsm-nl"]:
@@ -81,9 +95,11 @@ def get_model_settings_from_checkpoint(ckpt: Dict[str, Any]) -> Dict[str, Any]:
     if ckpt["model_type"] in ["trn", "mtrn"]:
         settings["img_feature_dim"] = ckpt["img_feature_dim"]
 
-    settings.update(
-        {key: getattr(ckpt["args"], key) for key in ["flow_length", "dropout"]}
-    )
+    if "args" not in ckpt:
+        settings["flow_length"] = 1
+        settings["dropout"] = 0.8
+    else:
+        settings.update({key: getattr(ckpt["args"], key) for key in ["flow_length", "dropout"]})
     return settings
 
 
